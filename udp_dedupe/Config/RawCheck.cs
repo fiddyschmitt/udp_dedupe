@@ -10,6 +10,6 @@ namespace udp_dedupe.Config
     {
         public string Filter = "";
         public int TimeWindowInMilliseconds = 5000;
-        public string? PayloadBytesToInspect;
+        public string PayloadBytesToInspect = "";
     }
 }
