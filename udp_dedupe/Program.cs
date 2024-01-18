@@ -28,9 +28,9 @@ namespace udp_dedupe
                     new RawCheck()
                     {
                         TimeWindowInMilliseconds = 5000,
-                        //Filter = "udp && udp.DstPort == 15000",
-                        Filter = "udp",
-                        PayloadBytesToInspect = "0-3, 5-6, 10, 13"
+                        Filter = "udp && udp.DstPort == 15000",
+                        //Filter = "udp",
+                        PayloadBytesToInspect = "0"
                     }
                 }
             };
@@ -45,6 +45,12 @@ namespace udp_dedupe
 
             var settingsJson = File.ReadAllText(settingsFilename);
             var settings = JsonConvert.DeserializeObject<Settings>(settingsJson);
+
+            if (settings == null)
+            {
+                Console.WriteLine($"Settings could not be loaded.");
+                return;
+            }
 
             var checks = settings
                             .Checks

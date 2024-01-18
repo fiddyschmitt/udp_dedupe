@@ -8,8 +8,8 @@ namespace udp_dedupe.Config
 {
     public class RawCheck
     {
-        public string Filter;
+        public string Filter = "";
         public int TimeWindowInMilliseconds = 5;
-        public string PayloadBytesToInspect;
+        public string? PayloadBytesToInspect;
     }
 }
