@@ -12,13 +12,9 @@ namespace udp_dedupe.Utilities
         public static bool IsFilterValid(string filter)
         {
             uint errorPos = 0;
+            var result = WinDivert.WinDivertHelperCheckFilter(filter, WinDivertLayer.Network, out _, ref errorPos);
 
-            if (!WinDivert.WinDivertHelperCheckFilter(filter, WinDivertLayer.Network, out string errorMessage, ref errorPos))
-            {
-                throw new Exception($"Filter string is invalid at position {errorPos}.\nError Message:\n{errorMessage}");
-            }
-
-            return true;
+            return result;
         }
     }
 }

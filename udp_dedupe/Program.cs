@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using udp_dedupe.Config;
 using udp_dedupe.Network;
+using udp_dedupe.Utilities;
 
 namespace udp_dedupe
 {
@@ -23,14 +24,13 @@ namespace udp_dedupe
 
             var tmp = new Settings()
             {
-                Checks = new List<RawCheck>()
+                Checks = new List<Check>()
                 {
-                    new RawCheck()
+                    new Check()
                     {
                         TimeWindowInMilliseconds = 5000,
                         //Filter = "udp && udp.DstPort == 15000",
-                        Filter = "udp",
-                        PayloadBytesToInspect = "0,5-8,13"
+                        Filter = "udp"
                     }
                 }
             };
@@ -52,12 +52,28 @@ namespace udp_dedupe
                 return;
             }
 
-            var checks = settings
-                            .Checks
-                            .Select(rawCheck => new Check(rawCheck))
-                            .ToList();
+            var invalidCount = settings
+                                .Checks
+                                .Select(check =>
+                                {
+                                    var filterIsValid = WinDivertUtilities.IsFilterValid(check.Filter);
+                                    if (!filterIsValid)
+                                    {
+                                        Console.WriteLine($"Invalid filter: {check.Filter}");
+                                    }
 
-            var checkers = checks
+                                    return filterIsValid;
+                                })
+                                .Where(valid => !valid)
+                                .Count();
+
+            if (invalidCount > 0)
+            {
+                return;
+            }
+
+            var checkers = settings
+                                .Checks
                             .Select(check => new Checker(check))
                             .ToList();
 
