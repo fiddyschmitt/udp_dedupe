@@ -11,6 +11,11 @@ namespace udp_dedupe
     {
         public static IEnumerable<int> ExtractNumbers(string numberList)
         {
+            if (string.IsNullOrEmpty(numberList) || numberList.Trim().Equals("*"))
+            {
+                return new List<int>();
+            }
+
             var listRegex = new Regex("(.*?)-(.*)");
             IEnumerable<int> result = new List<int>();
 

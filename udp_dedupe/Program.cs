@@ -30,7 +30,7 @@ namespace udp_dedupe
                         TimeWindowInMilliseconds = 5000,
                         Filter = "udp && udp.DstPort == 15000",
                         //Filter = "udp",
-                        PayloadBytesToInspect = "0"
+                        PayloadBytesToInspect = "*"
                     }
                 }
             };

@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Caching;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using udp_dedupe.Config;
+using udp_dedupe.Utilities;
 using WinDivertSharp;
 using WinDivertSharp.WinAPI;
 
@@ -29,9 +31,12 @@ namespace udp_dedupe.Network
             var readLen = 0U;
 
             NativeOverlapped recvOverlapped;
-
-            var recvEvent = IntPtr.Zero;
             var recvAsyncIoLen = 0U;
+
+            var checkEntirePayload = Check.BytesToInspect.Count == 0;
+            var finalByteToCheck = Check.BytesToInspect.LastOrDefault();
+
+            var recentDatagrams = new MemoryCache("RecentDatagrams");
 
 
             while (true)
@@ -42,7 +47,7 @@ namespace udp_dedupe.Network
                 recvAsyncIoLen = 0;
                 recvOverlapped = new NativeOverlapped();
 
-                recvEvent = Kernel32.CreateEvent(IntPtr.Zero, false, false, IntPtr.Zero);
+                IntPtr recvEvent = Kernel32.CreateEvent(IntPtr.Zero, false, false, IntPtr.Zero);
 
                 if (recvEvent == IntPtr.Zero)
                 {
@@ -103,9 +108,30 @@ namespace udp_dedupe.Network
                     Marshal.Copy((IntPtr)parsedPacket.PacketPayload, payloadArray, 0, payloadArray.Length);
                 }
 
-                if (payloadArray != null)
+
+                bool? shouldForward = null;
+
+                if (payloadArray == null)
                 {
-                    Console.WriteLine($"{DateTime.Now}: Packet has {payloadArray.Length:N0} byte payload.");
+                    //We couldn't unpack the payload. Let's just forward it to be safe
+                    shouldForward = true;
+                }
+
+                if (shouldForward == null && checkEntirePayload && payloadArray != null)
+                {
+                    var payloadHex = payloadArray.ToHexString();
+
+                    if (recentDatagrams.Contains(payloadHex))
+                    {
+                        shouldForward = false;
+                        Console.WriteLine($"{DateTime.Now} Duplicate packet detected. Dropping.");
+                    }
+                    else
+                    {
+                        shouldForward = true;
+                        recentDatagrams.Set(payloadHex, new object(), DateTimeOffset.UtcNow.AddMilliseconds(Check.TimeWindowInMilliseconds));
+                        Console.WriteLine($"{DateTime.Now} Forwarding packet.");
+                    }
                 }
 
                 //Console.WriteLine($"{nameof(addr.Direction)} - {addr.Direction}");
@@ -120,17 +146,26 @@ namespace udp_dedupe.Network
 
                 // Console.WriteLine(WinDivert.WinDivertHelperCalcChecksums(packet, ref addr, WinDivertChecksumHelperParam.All));
 
-                //if (!WinDivert.WinDivertSendEx(handle, packet, readLen, 0, ref addr))
-                //{
-                //    Console.WriteLine("Write Err: {0}", Marshal.GetLastWin32Error());
-                //}
-            }
-        }
+                shouldForward ??= true;
 
-        static void ProcessPacket(WinDivertBuffer packet, WinDivertAddress addr)
-        {
-            // Your packet processing logic here
-            Console.WriteLine("Packet received!");
+                if (shouldForward.Value)
+                {
+                    var forwardedSuccessfully = WinDivert.WinDivertSendEx(handle, packet, readLen, 0, ref addr);
+                    if (forwardedSuccessfully)
+                    {
+
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Unable to forward packet: {Marshal.GetLastWin32Error()}");
+                    }
+                }
+                else
+                {
+
+                }
+
+            }
         }
     }
 }
