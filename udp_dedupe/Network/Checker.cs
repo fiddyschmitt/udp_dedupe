@@ -28,23 +28,19 @@ namespace udp_dedupe.Network
 
             var packet = new WinDivertBuffer();
             var addr = new WinDivertAddress();
-            var readLen = 0U;
 
             NativeOverlapped recvOverlapped;
-            var recvAsyncIoLen = 0U;
 
-            var checkEntirePayload = Check.BytesToInspect.Count == 0;
-            var finalByteToCheck = Check.BytesToInspect.LastOrDefault();
+            var bytesToInspect = Check.BytesToInspect.ToList();
+            var checkEntirePayload = bytesToInspect.Count == 0;
+            var minimumLengthPayloadMustBe = bytesToInspect
+                                                .OrderBy(b => b)
+                                                .LastOrDefault();
 
             var recentDatagrams = new MemoryCache("RecentDatagrams");
 
-
             while (true)
             {
-                readLen = 0;
-
-
-                recvAsyncIoLen = 0;
                 recvOverlapped = new NativeOverlapped();
 
                 IntPtr recvEvent = Kernel32.CreateEvent(IntPtr.Zero, false, false, IntPtr.Zero);
@@ -59,6 +55,7 @@ namespace udp_dedupe.Network
 
                 recvOverlapped.EventHandle = recvEvent;
 
+                var readLen = 0U;
                 if (!WinDivert.WinDivertRecvEx(handle, packet, 0, ref addr, ref readLen, ref recvOverlapped))
                 {
                     var error = Marshal.GetLastWin32Error();
@@ -76,6 +73,7 @@ namespace udp_dedupe.Network
 
                     }
 
+                    var recvAsyncIoLen = 0U;
                     if (!Kernel32.GetOverlappedResult(handle, ref recvOverlapped, ref recvAsyncIoLen, false))
                     {
                         Console.WriteLine("Failed to get overlapped result.");
@@ -111,60 +109,87 @@ namespace udp_dedupe.Network
 
                 bool? shouldForward = null;
 
-                if (payloadArray == null)
-                {
-                    //We couldn't unpack the payload. Let's just forward it to be safe
-                    shouldForward = true;
-                }
-
                 if (shouldForward == null && checkEntirePayload && payloadArray != null)
                 {
+                    //check if we've seen the whole packet recently
+
                     var payloadHex = payloadArray.ToHexString();
 
                     if (recentDatagrams.Contains(payloadHex))
                     {
                         shouldForward = false;
-                        Console.WriteLine($"{DateTime.Now} Duplicate packet detected. Dropping.");
+                        Console.WriteLine($"{DateTime.Now} Duplicate packet detected (based on entire payload). Dropping.");
                     }
                     else
                     {
                         shouldForward = true;
                         recentDatagrams.Set(payloadHex, new object(), DateTimeOffset.UtcNow.AddMilliseconds(Check.TimeWindowInMilliseconds));
-                        Console.WriteLine($"{DateTime.Now} Forwarding packet.");
+                        Console.WriteLine($"{DateTime.Now} Forwarding packet (it has unique content within last {Check.TimeWindowInMilliseconds:N0} ms)");
                     }
                 }
 
-                //Console.WriteLine($"{nameof(addr.Direction)} - {addr.Direction}");
-                //Console.WriteLine($"{nameof(addr.Impostor)} - {addr.Impostor}");
-                //Console.WriteLine($"{nameof(addr.Loopback)} - {addr.Loopback}");
-                //Console.WriteLine($"{nameof(addr.IfIdx)} - {addr.IfIdx}");
-                //Console.WriteLine($"{nameof(addr.SubIfIdx)} - {addr.SubIfIdx}");
-                //Console.WriteLine($"{nameof(addr.Timestamp)} - {addr.Timestamp}");
-                //Console.WriteLine($"{nameof(addr.PseudoIPChecksum)} - {addr.PseudoIPChecksum}");
-                //Console.WriteLine($"{nameof(addr.PseudoTCPChecksum)} - {addr.PseudoTCPChecksum}");
-                //Console.WriteLine($"{nameof(addr.PseudoUDPChecksum)} - {addr.PseudoUDPChecksum}");
-
-                // Console.WriteLine(WinDivert.WinDivertHelperCalcChecksums(packet, ref addr, WinDivertChecksumHelperParam.All));
-
-                shouldForward ??= true;
-
-                if (shouldForward.Value)
+                if (shouldForward == null && payloadArray != null)
                 {
-                    var forwardedSuccessfully = WinDivert.WinDivertSendEx(handle, packet, readLen, 0, ref addr);
-                    if (forwardedSuccessfully)
+                    if (payloadArray.Length < minimumLengthPayloadMustBe)
                     {
-
+                        shouldForward = true;
+                        Console.WriteLine($"{DateTime.Now} Forwarding packet (it's smaller than the bytes that need to be checked)");
                     }
                     else
                     {
-                        Console.WriteLine($"Unable to forward packet: {Marshal.GetLastWin32Error()}");
+                        //check if we've seen part of the packet recently
+
+                        var subpayloadHex = bytesToInspect
+                                                .Select(byteIndex => payloadArray[byteIndex])
+                                                .ToArray()
+                                                .ToHexString();
+
+                        if (recentDatagrams.Contains(subpayloadHex))
+                        {
+                            shouldForward = false;
+                            Console.WriteLine($"{DateTime.Now} Duplicate packet detected (based on payload subset). Dropping.");
+                        }
+                        else
+                        {
+                            shouldForward = true;
+                            recentDatagrams.Set(subpayloadHex, new object(), DateTimeOffset.UtcNow.AddMilliseconds(Check.TimeWindowInMilliseconds));
+                            Console.WriteLine($"{DateTime.Now} Forwarding packet (it has unique subset content within last {Check.TimeWindowInMilliseconds:N0} ms)");
+                        }
                     }
-                }
-                else
-                {
+
+                    //Console.WriteLine($"{nameof(addr.Direction)} - {addr.Direction}");
+                    //Console.WriteLine($"{nameof(addr.Impostor)} - {addr.Impostor}");
+                    //Console.WriteLine($"{nameof(addr.Loopback)} - {addr.Loopback}");
+                    //Console.WriteLine($"{nameof(addr.IfIdx)} - {addr.IfIdx}");
+                    //Console.WriteLine($"{nameof(addr.SubIfIdx)} - {addr.SubIfIdx}");
+                    //Console.WriteLine($"{nameof(addr.Timestamp)} - {addr.Timestamp}");
+                    //Console.WriteLine($"{nameof(addr.PseudoIPChecksum)} - {addr.PseudoIPChecksum}");
+                    //Console.WriteLine($"{nameof(addr.PseudoTCPChecksum)} - {addr.PseudoTCPChecksum}");
+                    //Console.WriteLine($"{nameof(addr.PseudoUDPChecksum)} - {addr.PseudoUDPChecksum}");
+
+                    // Console.WriteLine(WinDivert.WinDivertHelperCalcChecksums(packet, ref addr, WinDivertChecksumHelperParam.All));
+
+                    //still undecided if it should be forwarded. Let's forward it by default
+                    shouldForward ??= true;
+
+                    if (shouldForward.Value)
+                    {
+                        var forwardedSuccessfully = WinDivert.WinDivertSendEx(handle, packet, readLen, 0, ref addr);
+                        if (forwardedSuccessfully)
+                        {
+
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Unable to forward packet: {Marshal.GetLastWin32Error()}");
+                        }
+                    }
+                    else
+                    {
+
+                    }
 
                 }
-
             }
         }
     }

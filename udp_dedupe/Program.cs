@@ -28,9 +28,9 @@ namespace udp_dedupe
                     new RawCheck()
                     {
                         TimeWindowInMilliseconds = 5000,
-                        Filter = "udp && udp.DstPort == 15000",
-                        //Filter = "udp",
-                        PayloadBytesToInspect = "*"
+                        //Filter = "udp && udp.DstPort == 15000",
+                        Filter = "udp",
+                        PayloadBytesToInspect = "0,5-8,13"
                     }
                 }
             };

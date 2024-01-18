@@ -41,7 +41,7 @@ namespace udp_dedupe
                             int startPort = int.Parse(m.Groups[1].Value.Trim());
                             int endPort = int.Parse(m.Groups[2].Value.Trim());
 
-                            result = result.Concat(Enumerable.Range(startPort, endPort - startPort));
+                            result = result.Concat(Enumerable.Range(startPort, endPort - startPort + 1));
                         }
                     }
                 });

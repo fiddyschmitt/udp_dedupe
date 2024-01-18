@@ -8,6 +8,6 @@ namespace udp_dedupe.Config
 {
     public class Settings
     {
-        public List<RawCheck> Checks = new List<RawCheck>();
+        public List<RawCheck> Checks = new();
     }
 }
