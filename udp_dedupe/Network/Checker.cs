@@ -118,7 +118,7 @@ namespace udp_dedupe.Network
                     {
                         shouldForward = true;
                         recentDatagrams.Set(payloadHex, new object(), DateTimeOffset.UtcNow.AddMilliseconds(Check.TimeWindowInMilliseconds));
-                        Console.WriteLine($"{DateTime.Now} Forwarding unique packet.");
+                        Console.WriteLine($"{DateTime.Now} Packet is unique. Forwarding.");
                     }
                 }
 

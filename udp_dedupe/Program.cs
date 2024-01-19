@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -22,21 +23,26 @@ namespace udp_dedupe
                 return;
             }
 
-            var tmp = new Settings()
-            {
-                Checks = new List<Check>()
-                {
-                    new Check()
-                    {
-                        TimeWindowInMilliseconds = 5000,
-                        Filter = "udp && udp.DstPort == 15000",
-                        //Filter = "udp"
-                    }
-                }
-            };
-            File.WriteAllText("settings.json", JsonConvert.SerializeObject(tmp, Formatting.Indented));
-
             var settingsFilename = args[0];
+
+            if (!File.Exists(settingsFilename) || Debugger.IsAttached)
+            {
+                var example = new Settings()
+                {
+                    Checks = new List<Check>()
+                    {
+                        new Check()
+                        {
+                            TimeWindowInMilliseconds = 5000,
+                            Filter = "udp && udp.DstPort == 15000",
+                            //Filter = "udp"
+                        }
+                    }
+                };
+
+                File.WriteAllText("settings.json", JsonConvert.SerializeObject(example, Formatting.Indented));
+            }
+
             if (!File.Exists(settingsFilename))
             {
                 Console.WriteLine($"File does not exist: {settingsFilename}");
@@ -66,7 +72,7 @@ namespace udp_dedupe
                                 })
                                 .Where(valid => !valid)
                                 .Count();
-            
+
             if (invalidCount > 0)
             {
                 return;
