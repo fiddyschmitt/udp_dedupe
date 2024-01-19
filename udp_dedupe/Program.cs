@@ -29,8 +29,8 @@ namespace udp_dedupe
                     new Check()
                     {
                         TimeWindowInMilliseconds = 5000,
-                        //Filter = "udp && udp.DstPort == 15000",
-                        Filter = "udp"
+                        Filter = "udp && udp.DstPort == 15000",
+                        //Filter = "udp"
                     }
                 }
             };
@@ -66,7 +66,7 @@ namespace udp_dedupe
                                 })
                                 .Where(valid => !valid)
                                 .Count();
-
+            
             if (invalidCount > 0)
             {
                 return;
