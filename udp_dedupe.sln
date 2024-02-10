@@ -1,9 +1,9 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "udp_dedupe", "udp_dedupe\udp_dedupe.csproj", "{14301B79-A242-404D-9BE1-B761E451CB85}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "udp_dedupe", "udp_dedupe\udp_dedupe.csproj", "{14301B79-A242-404D-9BE1-B761E451CB85}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
