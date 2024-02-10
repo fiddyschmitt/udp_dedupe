@@ -47,8 +47,9 @@ namespace udp_dedupe
                     };
 
                     File.WriteAllText(defaultSettingsFilename, JsonConvert.SerializeObject(example, Formatting.Indented));
-                    settingsFilename = defaultSettingsFilename;
                 }
+
+                settingsFilename = defaultSettingsFilename;
             }
             else
             {
