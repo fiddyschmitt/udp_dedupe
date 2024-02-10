@@ -61,6 +61,7 @@ namespace udp_dedupe
                 return;
             }
 
+            Console.WriteLine($"Reading settings from {settingsFilename}");
             var settingsJson = File.ReadAllText(settingsFilename);
             var settings = JsonConvert.DeserializeObject<Settings>(settingsJson);
 
@@ -68,10 +69,6 @@ namespace udp_dedupe
             {
                 Console.WriteLine($"Settings could not be loaded.");
                 return;
-            }
-            else
-            {
-                Console.WriteLine($"Read settings from {settingsFilename}");
             }
 
             var invalidCount = settings
@@ -102,8 +99,8 @@ namespace udp_dedupe
             checkers
                 .ForEach(checker =>
                 {
-                    Task.Factory.StartNew(checker.Start);
-                    Console.WriteLine($"Started checker for filter: {checker.Check.Filter}");
+                    Console.WriteLine($"Starting checker for filter: {checker.Check.Filter}");
+                    Task.Factory.StartNew(checker.Start);                    
                 });
 
             Console.WriteLine($"Running.");
