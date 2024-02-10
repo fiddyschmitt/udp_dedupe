@@ -2,10 +2,13 @@
 
 This program inspects network packets and drops any which are duplicates.
 
+# Download
+Download from the [releases](https://github.com/fiddyschmitt/udp_dedupe/releases) section.
+
 # Usage
 
 Edit `settings.json`.
-The `filter` specifies what packets to inspect.
+The `filter specifies what packets to inspect.
 
 <br/>
 
