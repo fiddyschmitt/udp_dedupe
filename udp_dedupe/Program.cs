@@ -36,14 +36,14 @@ namespace udp_dedupe
                     var example = new Settings()
                     {
                         Checks = new List<Check>()
-                    {
-                        new()
                         {
-                            TimeWindowInMilliseconds = 5000,
-                            Filter = "inbound && !ipv6 && udp && udp.DstPort == 15000",
-                            //Filter = "inbound && !ipv6 && udp"
+                            new()
+                            {
+                                TimeWindowInMilliseconds = 5000,
+                                Filter = "inbound && !ipv6 && udp && udp.DstPort == 15000",
+                                //Filter = "inbound && !ipv6 && udp"
+                            }
                         }
-                    }
                     };
 
                     File.WriteAllText(defaultSettingsFilename, JsonConvert.SerializeObject(example, Formatting.Indented));
@@ -100,7 +100,7 @@ namespace udp_dedupe
                 .ForEach(checker =>
                 {
                     Console.WriteLine($"Starting checker for filter: {checker.Check.Filter}");
-                    Task.Factory.StartNew(checker.Start);                    
+                    Task.Factory.StartNew(checker.Start);
                 });
 
             Console.WriteLine($"Running.");
