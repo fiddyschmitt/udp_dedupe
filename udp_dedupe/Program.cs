@@ -15,8 +15,13 @@ namespace udp_dedupe
 {
     internal class Program
     {
+        const string PROGRAM_NAME = "UDP Dedupe";
+        const string VERSION = "1.0.0";
+
         static void Main(string[] args)
         {
+            Console.WriteLine($"{PROGRAM_NAME} {VERSION}");
+
             var settingsFilename = "";
 
             if (args.Length == 0)
