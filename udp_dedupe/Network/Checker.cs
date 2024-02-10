@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Caching;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using udp_dedupe.Config;
 using udp_dedupe.Utilities;
 using WinDivertSharp;
@@ -57,8 +53,11 @@ namespace udp_dedupe.Network
                     // 997 == ERROR_IO_PENDING
                     if (error != 997)
                     {
-                        Console.WriteLine(string.Format("Unknown IO error ID {0} while awaiting overlapped result.", error));
+                        Console.WriteLine($"Unknown IO error ID {error} returned by WinDivert.WinDivertRecvEx.");
+                        Console.WriteLine("Please run the process with Administrative privileges.");
                         Kernel32.CloseHandle(recvEvent);
+                        Environment.Exit(1);
+
                         continue;
                     }
 
