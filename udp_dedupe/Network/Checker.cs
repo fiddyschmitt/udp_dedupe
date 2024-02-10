@@ -112,7 +112,7 @@ namespace udp_dedupe.Network
                         var ipDst = (parsedPacket.IPv4Header != null ? parsedPacket.IPv4Header->DstAddr : null);
                         ipDst ??= (parsedPacket.IPv6Header != null ? parsedPacket.IPv6Header->DstAddr : null);
 
-                        var packetStr = $"[{addr.Direction}] [{ipSrc}:{parsedPacket.UdpHeader->SrcPort} -> {ipDst}:{parsedPacket.UdpHeader->DstPort}]";
+                        var packetStr = $"[{addr.Direction}] [{ipSrc}:{parsedPacket.UdpHeader->SrcPort} -> {ipDst}:{parsedPacket.UdpHeader->DstPort}] [{parsedPacket.PacketPayloadLength:N0} bytes payload]";
 
                         if (recentDatagrams.Contains(payloadHex))
                         {
@@ -138,9 +138,9 @@ namespace udp_dedupe.Network
                     //Console.WriteLine($"{nameof(addr.PseudoTCPChecksum)} - {addr.PseudoTCPChecksum}");
                     //Console.WriteLine($"{nameof(addr.PseudoUDPChecksum)} - {addr.PseudoUDPChecksum}");
 
-                    // Console.WriteLine(WinDivert.WinDivertHelperCalcChecksums(packet, ref addr, WinDivertChecksumHelperParam.All));
+                        // Console.WriteLine(WinDivert.WinDivertHelperCalcChecksums(packet, ref addr, WinDivertChecksumHelperParam.All));
 
-                    //still undecided if it should be forwarded. Let's forward it by default
+                        //still undecided if it should be forwarded. Let's forward it by default
                     shouldForward ??= true;
 
                     if (shouldForward.Value)
