@@ -17,30 +17,37 @@ namespace udp_dedupe
     {
         static void Main(string[] args)
         {
+            var settingsFilename = "";
+
             if (args.Length == 0)
             {
-                Console.WriteLine($"Please provide settings file as arg");
-                return;
-            }
+                var defaultSettingsFilename = "settings.json";
+                Console.WriteLine($"Settings filename not provided as arg. Assuming {defaultSettingsFilename}");
 
-            var settingsFilename = args[0];
-
-            if (!File.Exists(settingsFilename) || Debugger.IsAttached)
-            {
-                var example = new Settings()
+                if (!File.Exists(defaultSettingsFilename) || Debugger.IsAttached)
                 {
-                    Checks = new List<Check>()
+                    Console.WriteLine($"Creating {defaultSettingsFilename} with default values.");
+
+                    var example = new Settings()
                     {
-                        new Check()
+                        Checks = new List<Check>()
+                    {
+                        new()
                         {
                             TimeWindowInMilliseconds = 5000,
-                            Filter = "udp && udp.DstPort == 15000",
-                            //Filter = "udp"
+                            Filter = "inbound && !ipv6 && udp && udp.DstPort == 15000",
+                            //Filter = "inbound && !ipv6 && udp"
                         }
                     }
-                };
+                    };
 
-                File.WriteAllText("settings.json", JsonConvert.SerializeObject(example, Formatting.Indented));
+                    File.WriteAllText(defaultSettingsFilename, JsonConvert.SerializeObject(example, Formatting.Indented));
+                    settingsFilename = defaultSettingsFilename;
+                }
+            }
+            else
+            {
+                settingsFilename = args[0];
             }
 
             if (!File.Exists(settingsFilename))
@@ -56,6 +63,10 @@ namespace udp_dedupe
             {
                 Console.WriteLine($"Settings could not be loaded.");
                 return;
+            }
+            else
+            {
+                Console.WriteLine($"Read settings from {settingsFilename}");
             }
 
             var invalidCount = settings
@@ -79,12 +90,18 @@ namespace udp_dedupe
             }
 
             var checkers = settings
-                                .Checks
+                            .Checks
                             .Select(check => new Checker(check))
                             .ToList();
 
             checkers
-                .ForEach(checker => checker.Start());
+                .ForEach(checker =>
+                {
+                    Task.Factory.StartNew(checker.Start);
+                    Console.WriteLine($"Started checker for filter: {checker.Check.Filter}");
+                });
+
+            Console.WriteLine($"Running.");
 
             while (true)
             {

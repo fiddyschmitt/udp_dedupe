@@ -1,8 +1,7 @@
 {
   "profiles": {
     "udp_dedupe": {
-      "commandName": "Project",
-      "commandLineArgs": "settings.json"
+      "commandName": "Project"
     }
   }
 }
