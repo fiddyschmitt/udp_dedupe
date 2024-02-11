@@ -8,7 +8,7 @@ Download from the [releases](https://github.com/fiddyschmitt/udp_dedupe/releases
 # Usage
 
 Edit `settings.json`.
-The `filter specifies what packets to inspect.
+The `Filter` specifies what packets to inspect.
 
 <br/>
 
